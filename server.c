@@ -33,9 +33,10 @@ int acceptConnection(int port){
     } 
 
     printf("listening\n");
-    int sinLen = sizeof(sin);
+    struct sockaddr_in cli_addr;
+    int cli_len = sizeof(cli_addr);
     int new_socket;
-    if ((new_socket = accept(sock_desc, (struct sockaddr *)&sin,  (socklen_t*)&sinLen) < 0)) { 
+    if ((new_socket = accept(sock_desc, (struct sockaddr *)&cli_addr, (socklen_t*)&cli_len) < 0)) { 
         fprintf(stderr, "Failed to accept connection\n"); 
         exit(1); 
     } 
@@ -53,12 +54,14 @@ void readFromClient(int new_socket){
     int size;
     int n;
     printf("reading\n");
-    read(new_socket , &size, 4); 
-    size = ntohl(size);
+    read(new_socket , &size, 32); 
+    printf("test1\n");
+    //size = ntohl(size);
+    printf("test2\n");
+    printf("size=%d\n", size);
 
     char buf[size+1], *bufptr;
 
-    printf("size=%d", size);
     bufptr = buf;
     int count = size;
     while(count > 0 && (n = read(new_socket, bufptr, count)) > 0){

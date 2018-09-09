@@ -20,7 +20,13 @@ int connectToSock(int port, char* ipString){
 
     sin.sin_family = PF_INET;
     sin.sin_port = htons(port);
-    inet_pton(AF_INET, &ipString, &(sin.sin_addr));
+    //inet_pton(AF_INET, &ipString, &(sin.sin_addr));
+    in_addr_t address;
+    address = inet_addr(ipString);
+    if ( address == -1 ) {
+           /* handle error here... */
+    }
+    memcpy(&sin.sin_addr, &address, sizeof(address));
 
     if (connect(sock_desc, (struct sockaddr *)&sin, sizeof(sin)) < 0){
         fprintf(stderr,"can't connect to %s.%d : Connection refused\n", ipString, port);
@@ -32,30 +38,30 @@ int connectToSock(int port, char* ipString){
 
 void queryServer(int sock_desc){  
     while(1){
-        int BUFLEN = 1024;
-        char* buf;
+        size_t BUFLEN = 1024;
+        char* buf = NULL;
         int n;
-        buf = (char *) malloc (BUFLEN + 1);
         n = getline(&buf,&BUFLEN,stdin);
+        printf("n=%d\n",n);
         if (n <=0){
             return;
         }
-        buf[n] = "\0";
 
 
-        printf(buf);
-        int32_t num = htonl(n);
-        char *data = (char*)&num;
-        int result = write(sock_desc, data, sizeof(num));
+        //int32_t num = htonl(n - 1);
+        int num = n - 1;
+        num = htonl(num);
+        int result = write(sock_desc, &num, sizeof(num));
         if (result < 0){
             fprintf(stderr, "ERROR: Failed to write to server\n");
         }
+
+        printf("result=%d\n",result);
 
         result = write(sock_desc, &buf, n);
         if (result < 0){
             fprintf(stderr, "ERROR: Failed to write to server\n");
         }
-        free(buf);
     }
 }
 
@@ -66,7 +72,7 @@ int main( int argc, const char* argv[] )
     }
 
     // Connect to socket
-    int address = argv[1];
+    char* address = argv[1];
     int port = atoi(argv[2]);
     int sock_desc = connectToSock(port,address);
 
