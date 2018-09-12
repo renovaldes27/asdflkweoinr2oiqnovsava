@@ -51,9 +51,9 @@ void queryServer(int sock_desc){
             return;
         }
 
-        int num = n - 1;
+        int num = n - 1;  // Don't write the newline character
 
-        num = htonl(8);
+        num = htonl(num);
         int result = write(sock_desc, &num, sizeof(num));
         if (result < 0){
             fprintf(stderr, "ERROR: Failed to write to server\n");
