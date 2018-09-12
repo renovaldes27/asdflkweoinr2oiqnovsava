@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <unistd.h>
 
 void readFromClient(int sock_desc);
 
@@ -54,10 +55,13 @@ void readFromClient(int new_socket){
     int size;
     int n;
     printf("reading\n");
-    read(new_socket , &size, 32); 
-    printf("test1\n");
-    //size = ntohl(size);
-    printf("test2\n");
+    n = read(new_socket , &size, 4); 
+    if(n <=0){
+        fprintf(stderr,"Failed to read message size.\n");
+        exit(1);
+    }
+
+    size = ntohl(size);
     printf("size=%d\n", size);
 
     char buf[size+1], *bufptr;
@@ -78,6 +82,4 @@ int main( int argc, const char* argv[] ){
 
     int port = atoi(argv[1]);
     acceptConnection(port);
-
-
 }

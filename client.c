@@ -1,10 +1,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys/types.h>
+#include <netdb.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <netdb.h>
+#include <arpa/inet.h>
+
 
 // connectToSock
 // params: int port : the port to connect to
@@ -12,7 +16,7 @@
 // return: int sock_desc
 // This function takes a port number and host name
 // and connects to a socket at that location.
-int connectToSock(int port, char* ipString){
+int connectToSock(int port, const char* ipString){
     int sock_desc;
     sock_desc = socket(PF_INET, SOCK_STREAM, 6);
 
@@ -47,10 +51,9 @@ void queryServer(int sock_desc){
             return;
         }
 
-
-        //int32_t num = htonl(n - 1);
         int num = n - 1;
-        num = htonl(num);
+
+        num = htonl(8);
         int result = write(sock_desc, &num, sizeof(num));
         if (result < 0){
             fprintf(stderr, "ERROR: Failed to write to server\n");
@@ -71,10 +74,8 @@ int main( int argc, const char* argv[] )
         fprintf(stderr,"Too many cmd-line arguments\n");
     }
 
-    // Connect to socket
-    char* address = argv[1];
     int port = atoi(argv[2]);
-    int sock_desc = connectToSock(port,address);
+    int sock_desc = connectToSock(port,argv[1]);
 
     queryServer(sock_desc);
     close(sock_desc);
