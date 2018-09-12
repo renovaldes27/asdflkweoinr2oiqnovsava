@@ -20,7 +20,7 @@ int acceptConnection(int port){
 
     sin.sin_family = PF_INET;
     sin.sin_port = htons(port);
-    sin.sin_addr.s_addr = INADDR_ANY;
+    sin.sin_addr.s_addr = INADDR_ANY;  // Accepting connections from any sources
     int result = bind(sock_desc, (struct sockaddr *)&sin, sizeof(sin));
     if (result < 0) {
         fprintf(stderr,"Failed to bind to port %d\n.", port);
