@@ -54,7 +54,7 @@ int acceptConnection(int port){
 void readFromClient(int new_socket){
     int size;
     int n;
-    printf("reading\n");
+    printf("server: reading from client\n");
     n = read(new_socket , &size, 4);
     
     if(n <=0){
@@ -63,21 +63,21 @@ void readFromClient(int new_socket){
     }
 
     size = ntohl(size);
-    printf("size=%d\n", size);
+    // Remove new line character from the actual length and print it
+    printf("size = %d\n", size-1);
 
     char buf[size+1], *bufptr;
 
     bufptr = buf;
     int count = size;
     while(count > 0 && (n = read(new_socket, bufptr, count)) > 0){
-        printf("%d", count);
+        //printf("%d", count);
         bufptr += n;
 	    count -= n;	
     }
 
     buf[size] = '\0';
     printf("%s\n",buf);
-
 }
 
 int main( int argc, const char* argv[] ){

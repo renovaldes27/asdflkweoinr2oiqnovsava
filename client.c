@@ -60,12 +60,8 @@ void queryServer(int sock_desc){
         if (result < 0){
             fprintf(stderr, "ERROR: Failed to write to server\n");
         }
-
-        printf("num write result=%d\n",result);
-
-        result = write(sock_desc, &buf, n);
-
-        printf("buf write result=%d\n",result);
+        
+        result = write(sock_desc, buf, n);
 
         if (result < 0){
             fprintf(stderr, "ERROR: Failed to write to server\n");
