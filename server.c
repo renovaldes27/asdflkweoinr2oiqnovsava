@@ -55,7 +55,8 @@ void readFromClient(int new_socket){
     int size;
     int n;
     printf("reading\n");
-    n = read(new_socket , &size, 4); 
+    n = read(new_socket , &size, 4);
+    
     if(n <=0){
         fprintf(stderr,"Failed to read message size.\n");
         exit(1);
@@ -69,6 +70,7 @@ void readFromClient(int new_socket){
     bufptr = buf;
     int count = size;
     while(count > 0 && (n = read(new_socket, bufptr, count)) > 0){
+        printf("%d", count);
         bufptr += n;
 	    count -= n;	
     }
