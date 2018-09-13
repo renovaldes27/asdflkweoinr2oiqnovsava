@@ -12,7 +12,7 @@ void readFromClient(int sock_desc);
 int acceptConnection(int port){
     int sock_desc;
     sock_desc = socket(PF_INET, SOCK_STREAM, 6);
-    if (sock_desc < 0) {
+    if (sock_desc <= 0) {
         fprintf(stderr,"Failed to create socket\n.");
         exit(1);
     }
@@ -34,10 +34,10 @@ int acceptConnection(int port){
     } 
 
     printf("listening\n");
-    struct sockaddr_in cli_addr;
-    int cli_len = sizeof(cli_addr);
+    //struct sockaddr_in cli_addr;
+    int cli_len = sizeof(sock_desc);
     int new_socket;
-    if ((new_socket = accept(sock_desc, (struct sockaddr *)&cli_addr, (socklen_t*)&cli_len) < 0)) { 
+    if ((new_socket = accept(sock_desc, (struct sockaddr *)&sock_desc, (socklen_t*)&cli_len)) < 0) { 
         fprintf(stderr, "Failed to accept connection\n"); 
         exit(1); 
     } 
