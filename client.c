@@ -24,16 +24,16 @@ int connectToSock(int port, const char* ipString){
 
     sin.sin_family = PF_INET;
     sin.sin_port = htons(port);
-    //inet_pton(AF_INET, &ipString, &(sin.sin_addr));
     in_addr_t address;
     address = inet_addr(ipString);
     if ( address == -1 ) {
-           /* handle error here... */
+         fprintf(stderr, "ERROR: inet_addr failed to convert ipString '%s'\n", ipString);
+         exit(1);
     }
     memcpy(&sin.sin_addr, &address, sizeof(address));
 
     if (connect(sock_desc, (struct sockaddr *)&sin, sizeof(sin)) < 0){
-        fprintf(stderr,"can't connect to %s.%d : Connection refused\n", ipString, port);
+        fprintf(stderr,"ERROR: can't connect to %s.%d - Connection refused\n", ipString, port);
         exit(1);
     } 
 
@@ -51,7 +51,9 @@ void queryServer(int sock_desc){
             return;
         }
 
-        printf("%s\n", buf);
+        if (n > 1025){ // 1025 to account for newline character, so max char sent is 1024
+            n = 1025;
+        }
 
         int num = n-1;  // Don't write the newline character
 
@@ -67,12 +69,14 @@ void queryServer(int sock_desc){
             fprintf(stderr, "ERROR: Failed to write to server\n");
         }
     }
+    close(sock_desc);
 }
 
 int main( int argc, const char* argv[] )
 {
     if (argc > 3){
-        fprintf(stderr,"Too many cmd-line arguments\n");
+        fprintf(stderr,"ERROR: Too many cmd-line arguments\n");
+        exit(1);
     }
 
     int port = atoi(argv[2]);

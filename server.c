@@ -13,7 +13,7 @@ int acceptConnection(int port){
     int sock_desc;
     sock_desc = socket(PF_INET, SOCK_STREAM, 6);
     if (sock_desc <= 0) {
-        fprintf(stderr,"Failed to create socket\n.");
+        fprintf(stderr,"ERROR: failed to create socket\n.");
         exit(1);
     }
 
@@ -24,25 +24,22 @@ int acceptConnection(int port){
     sin.sin_addr.s_addr = INADDR_ANY;  // Accepting connections from any sources
     int result = bind(sock_desc, (struct sockaddr *)&sin, sizeof(sin));
     if (result < 0) {
-        fprintf(stderr,"Failed to bind to port %d\n.", port);
+        fprintf(stderr,"ERROR: failed to bind to port %d\n.", port);
         exit(1);
     }
 
     if (listen(sock_desc, 3) < 0) { 
-        fprintf(stderr,"Failed to start listening on port %d\n", port); 
+        fprintf(stderr,"ERROR: failed to start listening on port %d\n", port); 
         exit(1); 
     } 
 
-    printf("listening\n");
-    //struct sockaddr_in cli_addr;
     int cli_len = sizeof(sock_desc);
     int new_socket;
     if ((new_socket = accept(sock_desc, (struct sockaddr *)&sock_desc, (socklen_t*)&cli_len)) < 0) { 
-        fprintf(stderr, "Failed to accept connection\n"); 
+        fprintf(stderr, "ERROR: failed to accept connection\n"); 
         exit(1); 
     } 
 
-    printf("accepted connection\n");
     while(1){
         readFromClient(new_socket);
     }
@@ -54,24 +51,22 @@ int acceptConnection(int port){
 void readFromClient(int new_socket){
     int size;
     int n;
-    printf("server: reading from client\n");
     n = read(new_socket , &size, 4);
     
     if(n <=0){
-        fprintf(stderr,"Failed to read message size.\n");
+        fprintf(stderr,"ERROR: client closed connection.\n");
         exit(1);
     }
 
     size = ntohl(size);
     // Remove new line character from the actual length and print it
-    printf("size = %d\n", size);
+    printf("%d\n", size);
 
     char buf[size+1], *bufptr;
 
     bufptr = buf;
     int count = size;
     while(count > 0 && (n = read(new_socket, bufptr, count)) > 0){
-        //printf("%d", count);
         bufptr += n;
 	    count -= n;	
     }
