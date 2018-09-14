@@ -53,15 +53,18 @@ void queryServer(int sock_desc){
 
         printf("%s\n", buf);
 
-        int num = n;  // Don't write the newline character
+        int num = n-1;  // Don't write the newline character
+        //char newBuf[num];
 
-        num = htonl(n);
+        //memcpy(&newBuf, &buf, num); 
+
+        num = htonl(num);
         int result = write(sock_desc, &num, sizeof(num));
         if (result < 0){
             fprintf(stderr, "ERROR: Failed to write to server\n");
         }
         
-        result = write(sock_desc, buf, n);
+        result = write(sock_desc, buf, n-1);
 
         if (result < 0){
             fprintf(stderr, "ERROR: Failed to write to server\n");

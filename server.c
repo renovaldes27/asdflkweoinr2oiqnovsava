@@ -64,7 +64,7 @@ void readFromClient(int new_socket){
 
     size = ntohl(size);
     // Remove new line character from the actual length and print it
-    printf("size = %d\n", size-1);
+    printf("size = %d\n", size);
 
     char buf[size+1], *bufptr;
 
