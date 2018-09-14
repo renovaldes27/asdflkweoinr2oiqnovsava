@@ -72,11 +72,13 @@ void readFromClient(int new_socket){
     }
 
     buf[size] = '\0';
-    printf("%s\n",buf);
+    printf("%s\n\n",buf);
 }
 
 int main( int argc, const char* argv[] ){
 
     int port = atoi(argv[1]);
     acceptConnection(port);
+
+    return 0;
 }

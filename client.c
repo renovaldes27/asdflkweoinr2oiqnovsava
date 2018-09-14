@@ -84,4 +84,5 @@ int main( int argc, const char* argv[] )
 
     queryServer(sock_desc);
     close(sock_desc);
+    return 0;
 }
