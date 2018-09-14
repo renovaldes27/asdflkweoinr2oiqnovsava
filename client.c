@@ -46,12 +46,10 @@ void queryServer(int sock_desc){
         char* buf = NULL;
         int n;
         n = getline(&buf,&BUFLEN,stdin);
-        printf("n=%d\n",n);
+        
         if (n <=0){
             return;
         }
-
-        printf("%s\n", buf);
 
         int num = n;  // Don't write the newline character
 
