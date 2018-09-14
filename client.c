@@ -46,7 +46,7 @@ void queryServer(int sock_desc){
         char* buf = NULL;
         int n;
         n = getline(&buf,&BUFLEN,stdin);
-        printf("n=%d\n",n);
+        
         if (n <=0){
             return;
         }
@@ -54,9 +54,6 @@ void queryServer(int sock_desc){
         printf("%s\n", buf);
 
         int num = n-1;  // Don't write the newline character
-        //char newBuf[num];
-
-        //memcpy(&newBuf, &buf, num); 
 
         num = htonl(num);
         int result = write(sock_desc, &num, sizeof(num));
