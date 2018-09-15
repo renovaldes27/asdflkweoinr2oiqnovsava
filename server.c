@@ -94,7 +94,8 @@ void acceptConnection(int port){
 
     params: int new_socket : the socket description to read from
 
-    return: None
+    return: int: -1 or 1 will be returned to indicate if the connection was closed or not.
+                 -1 means the connection was closed, 1 means the connection is still open.
     
     This function takes a socket description and reads
     a single size/message from the client. Once the server
