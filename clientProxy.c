@@ -136,30 +136,56 @@ void queryLoop(int tel_desc, int server_desc){
     FD_SET(tel_desc, &listen);
     FD_SET(server_desc, &listen);     
     timeout.tv_sec = 240;        
-    timeout.tv_usec = 0;        
-    nfound = select(MAXFD + 1, &listen, (fd_set *)0, (fd_set *)0, &timeout);        
-    if (nfound == 0) {
-        fprintf(stderr, "ERROR: select call timed out\n");
-        exit(1);       
-    }        
-    else if (nfound < 0) {
-                    /* handle error here... */        
-    }
+    timeout.tv_usec = 0;
+    int BUFLEN = 1024;
+    char buf[1024];
+    int n;
 
-    if(FD_ISSET(tel_desc, &listen)){
-        printf("Recieved data from telnet\n");
-
-        int size;
-        int n;
-        n = read(tel_desc , &size, sizeof(size));
-    
-        if(n <=0){
-            fprintf(stderr,"Client closed connection.\n");
-            exit(0);
+    while(1){        
+        nfound = select(MAXFD + 1, &listen, (fd_set *)0, (fd_set *)0, &timeout);        
+        if (nfound == 0) {
+            fprintf(stderr, "ERROR: select call timed out\n");
+            exit(1);       
+        }        
+        else if (nfound < 0) {
+                        /* handle error here... */        
         }
-        
-        printf("%d\n", size);
 
+        if(FD_ISSET(tel_desc, &listen)){
+            printf("Recieved data from telnet\n");
+
+            n = read(tel_desc , &buf, BUFLEN);
+        
+            if(n <=0){
+                fprintf(stderr,"Client closed connection.\n");
+                exit(0);
+            }
+            printf("n=%d",n);
+
+            // Don't write the newline character
+            int num;
+
+            // change num to to a network value to send it
+            num = htonl(n-2);
+
+            // write the size of the buffer
+            int result = write(server_desc, &num, sizeof(num));
+            if (result < 0){
+                fprintf(stderr, "ERROR: Failed to write to server\n");
+                exit(1);
+            }
+
+            // write the user text to the server
+            result = write(server_desc, buf, n-2);
+
+            if (result < 0){
+                fprintf(stderr, "ERROR: Failed to write to server\n");
+                exit(1);
+            }
+
+            buf[n] = '\0';
+            printf("%s\n", buf);
+        }
     }
 
     //while(1){
