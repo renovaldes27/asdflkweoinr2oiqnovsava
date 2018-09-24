@@ -47,12 +47,14 @@ void queryLoop(int tel_desc, int server_desc);
     This function takes a port number and an ip address
     and connects to a socket at that location.
 */
-void connectToSockets(int telPort,int serverPort, const char* ipString){
+void connectToSockets(int telPort, int serverPort, const char *ipString)
+{
     static int tel_desc, server_desc;
 
     tel_desc = socket(PF_INET, SOCK_STREAM, 6);
-    if (tel_desc <= 0) {
-        fprintf(stderr,"ERROR: failed to create socket\n.");
+    if (tel_desc <= 0)
+    {
+        fprintf(stderr, "ERROR: failed to create socket\n.");
         exit(1);
     }
 
@@ -60,29 +62,32 @@ void connectToSockets(int telPort,int serverPort, const char* ipString){
 
     sin.sin_family = PF_INET;
     sin.sin_port = htons(telPort);
-    sin.sin_addr.s_addr = INADDR_ANY;  // Accepting connections from any sources
+    // TODO: It really should be just localhost since telnet is run local. So not any address
+    sin.sin_addr.s_addr = INADDR_ANY; // Accepting connections from any sources
     int result = bind(tel_desc, (struct sockaddr *)&sin, sizeof(sin));
-    if (result < 0) {
-        fprintf(stderr,"ERROR: failed to bind to port %d\n.", telPort);
+    if (result < 0)
+    {
+        fprintf(stderr, "ERROR: failed to bind to port %d\n.", telPort);
         close(tel_desc);
         exit(1);
     }
 
-    if (listen(tel_desc, 1) < 0) { 
-        fprintf(stderr,"ERROR: failed to start listening on port %d\n", telPort); 
-        exit(1); 
-    } 
+    if (listen(tel_desc, 1) < 0)
+    {
+        fprintf(stderr, "ERROR: failed to start listening on port %d\n", telPort);
+        exit(1);
+    }
 
     int cli_len = sizeof(tel_desc);
     static int new_socket;
-    if ((new_socket = accept(tel_desc, (struct sockaddr *)&tel_desc, (socklen_t*)&cli_len)) < 0) { 
+    if ((new_socket = accept(tel_desc, (struct sockaddr *)&tel_desc, (socklen_t *)&cli_len)) < 0)
+    {
         fprintf(stderr, "ERROR: failed to accept connection\n");
         close(tel_desc);
-        exit(1); 
-    } 
+        exit(1);
+    }
 
     printf("Accepted telnet connection\n");
-    
 
     // Connect to Server
     server_desc = socket(PF_INET, SOCK_STREAM, 6);
@@ -93,18 +98,20 @@ void connectToSockets(int telPort,int serverPort, const char* ipString){
     in_addr_t address;
     // Convert ip
     address = inet_addr(ipString);
-    if ( address == -1 ) {
-         fprintf(stderr, "ERROR: inet_addr failed to convert ipString '%s'\n", ipString);
-         exit(1);
+    if (address == -1)
+    {
+        fprintf(stderr, "ERROR: inet_addr failed to convert ipString '%s'\n", ipString);
+        exit(1);
     }
     memcpy(&sin2.sin_addr, &address, sizeof(address));
 
-    if (connect(server_desc, (struct sockaddr *)&sin2, sizeof(sin2)) < 0){
-        fprintf(stderr,"ERROR: can't connect to %s.%d - Connection refused\n", ipString, serverPort);
+    if (connect(server_desc, (struct sockaddr *)&sin2, sizeof(sin2)) < 0)
+    {
+        fprintf(stderr, "ERROR: can't connect to %s.%d - Connection refused\n", ipString, serverPort);
         exit(1);
-    } 
+    }
 
-    queryLoop(new_socket,server_desc);
+    queryLoop(new_socket, server_desc);
 }
 
 /*
@@ -119,66 +126,76 @@ void connectToSockets(int telPort,int serverPort, const char* ipString){
     that is without null terminator and newline
     characters.
 */
-void queryLoop(int tel_desc, int server_desc){
+void queryLoop(int tel_desc, int server_desc)
+{
     int MAXFD = 0;
 
-    if (tel_desc > server_desc){
+    if (tel_desc > server_desc)
+    {
         MAXFD = tel_desc;
     }
-    else {
+    else
+    {
         MAXFD = server_desc;
     }
 
     fd_set listen;
-    struct timeval timeout;  /* timeout for select call */        
-    int nfound;                
-    FD_ZERO(&listen);                       
+    struct timeval timeout; /* timeout for select call */
+    int nfound;
+    FD_ZERO(&listen);
     FD_SET(tel_desc, &listen);
-    FD_SET(server_desc, &listen);     
-    timeout.tv_sec = 240;        
+    FD_SET(server_desc, &listen);
+    timeout.tv_sec = 240;
     timeout.tv_usec = 0;
     int BUFLEN = 1024;
     char buf[1024];
     int n;
 
-    while(1){        
-        nfound = select(MAXFD + 1, &listen, (fd_set *)0, (fd_set *)0, &timeout);        
-        if (nfound == 0) {
+    while (1)
+    {
+        nfound = select(MAXFD + 1, &listen, (fd_set *)0, (fd_set *)0, &timeout);
+        if (nfound == 0)
+        {
             fprintf(stderr, "ERROR: select call timed out\n");
-            exit(1);       
-        }        
-        else if (nfound < 0) {
-                        /* handle error here... */        
+            exit(1);
+        }
+        else if (nfound < 0)
+        {
+            /* handle error here... */
         }
 
-        if(FD_ISSET(tel_desc, &listen)){
+        if (FD_ISSET(tel_desc, &listen))
+        {
             printf("Recieved data from telnet\n");
 
-            n = read(tel_desc , &buf, BUFLEN);
-        
-            if(n <=0){
-                fprintf(stderr,"Client closed connection.\n");
+            n = read(tel_desc, &buf, BUFLEN);
+
+            if (n <= 0)
+            {
+                fprintf(stderr, "Client closed connection.\n");
                 exit(0);
             }
-            printf("n=%d",n);
+            printf("n=%d", n);
 
             // Don't write the newline character
             int num;
 
             // change num to to a network value to send it
-            num = htonl(n-2);
+            num = htonl(n - 2);
 
             // write the size of the buffer
             int result = write(server_desc, &num, sizeof(num));
-            if (result < 0){
+            if (result < 0)
+            {
                 fprintf(stderr, "ERROR: Failed to write to server\n");
                 exit(1);
             }
 
             // write the user text to the server
-            result = write(server_desc, buf, n-2);
+            result = write(server_desc, buf, n - 2);
 
-            if (result < 0){
+            if (result < 0)
+            {
                 fprintf(stderr, "ERROR: Failed to write to server\n");
                 exit(1);
             }
@@ -189,7 +206,7 @@ void queryLoop(int tel_desc, int server_desc){
     }
 
     //while(1){
-        /*
+    /*
         size_t BUFLEN = 1024;
         char* buf = NULL;
         int n;
@@ -226,13 +243,14 @@ void queryLoop(int tel_desc, int server_desc){
     //close(sock_desc);
 }
 
-int main( int argc, const char* argv[] )
+int main(int argc, const char *argv[])
 {
-    if (argc > 4){
-        fprintf(stderr,"ERROR: Too many cmd-line arguments\n");
+    if (argc > 4)
+    {
+        fprintf(stderr, "ERROR: Too many cmd-line arguments\n");
         exit(1);
     }
-    
+
     int port1 = atoi(argv[1]);
     int port2 = atoi(argv[3]);
 

@@ -1,0 +1,244 @@
+/*
+    Authors: Reno Valdes, Hazza Alkaabi
+    Date: September 14, 2018
+    Instructor: Patrick Homer
+    Computer Science 425: Principles of Networking
+    University of Arizona
+
+    Project: Program 2: Mobile TCP Proxy - Milestone 2
+    File name: server.c
+    Description: This program (the server) will bind to a port passed as a command line
+                 argument and wait for a connection from the client. Once the client connects
+                 the server reads twice, the first to get the size of the message and
+                 the second time to read the message itself. Both the size and message
+                 are then printed to stdout. The server will continue reading messages until
+                 the client closes the connection.
+    
+    The command line argument for the client is as follow:
+    ./server port_number
+    where:
+    port_number is the port number that the server will be listneing to.
+
+    Note: A Makefile is provided. 
+    Run "make" or "make all" in the command line in the directory where Makefile are located.
+    The Makefile will clean first, then compile both of the client and server source files.
+*/
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <unistd.h>
+
+int readFromClient(int client_desc);
+
+/*
+    acceptConnection
+
+    params: int port : the port to bind to
+
+    return: None
+    
+    This function takes a port number and binds to it then
+    listens for a client to make a connection to this port.
+    Once a client connects, an infinite loop is started
+    that reads from the client. Only when the client disconnects will
+    this function return.
+*/
+void acceptConnection(int port)
+{
+    static int tel_desc, client_desc;
+
+    // Begining of socket, bind, and listen to client on server
+
+    client_desc = socket(PF_INET, SOCK_STREAM, 6);
+    if (client_desc <= 0)
+    {
+        fprintf(stderr, "ERROR: failed to create socket.\n");
+        exit(1);
+    }
+
+    struct sockaddr_in sin;
+
+    sin.sin_family = PF_INET;
+    sin.sin_port = htons(port);
+    sin.sin_addr.s_addr = INADDR_ANY; // Accepting connections from any sources
+    int result = bind(client_desc, (struct sockaddr *)&sin, sizeof(sin));
+    if (result < 0)
+    {
+        fprintf(stderr, "ERROR: failed to bind to port %d\n", port);
+        close(client_desc);
+        exit(1);
+    }
+
+    if (listen(client_desc, 3) < 0)
+    {
+        fprintf(stderr, "ERROR: failed to start listening on port %d\n", port);
+        exit(1);
+    }
+
+    // End of socket, bind, and listen to client on server
+
+    // Let's connect to the telnet daemon on localhost
+    // address 127.0.0.1, port 23
+    char *telnetAddress = "127.0.0.1";
+    int telnetPort = 23;
+
+    tel_desc = socket(PF_INET, SOCK_STREAM, 6);
+    if (tel_desc <= 0)
+    {
+        fprintf(stderr, "ERROR: failed to create socket for the telnet daemon.\n");
+        exit(1);
+    }
+
+    struct sockaddr_in telnet_sin;
+
+    telnet_sin.sin_family = PF_INET;
+    telnet_sin.sin_port = htons(telnetPort);
+    telnet_sin.sin_addr.s_addr = inet_addr(telnetAddress); // Accepting connection on localhost
+    result = bind(tel_desc, (struct sockaddr *)&telnet_sin, sizeof(telnet_sin));
+    if (result < 0)
+    {
+        fprintf(stderr, "ERROR: failed to bind to the telnet port %d\n", telnetPort);
+        close(tel_desc);
+        exit(1);
+    }
+
+    // TODO: not sure if the backlog (second parameter for listen) should be 3
+    if (listen(tel_desc, 3) < 0)
+    {
+        fprintf(stderr, "ERROR: failed to start listening on port %d\n", telnetPort);
+        exit(1);
+    }
+
+    // End of socket, bind, and listen of telnet daemon on server
+
+    // This function will run select than accept a connection
+    queryLoop(tel_desc, client_desc);
+
+    // TODO: close both socket now?
+    close(tel_desc);
+    close(client_desc);
+}
+
+void queryLoop(int tel_desc, int client_desc)
+{
+    int MAXFD = 0;
+
+    if (tel_desc > client_desc)
+    {
+        MAXFD = tel_desc;
+    }
+    else
+    {
+        MAXFD = client_desc;
+    }
+
+    fd_set listen;
+    struct timeval timeout; /* timeout for select call */
+    int nfound;
+    FD_ZERO(&listen);
+    FD_SET(tel_desc, &listen);
+    FD_SET(client_desc, &listen);
+    timeout.tv_sec = 240;
+    timeout.tv_usec = 0;
+    int BUFLEN = 1024;
+    char buf[1024];
+    char clientBuf[1024];
+    int n;
+
+    while (1)
+    {
+        nfound = select(MAXFD + 1, &listen, (fd_set *)0, (fd_set *)0, &timeout);
+        if (nfound == 0)
+        {
+            fprintf(stderr, "ERROR: select call timed out\n");
+            exit(1);
+        }
+        else if (nfound < 0)
+        {
+            /* handle error here... */
+        }
+
+        if (FD_ISSET(tel_desc, &listen))
+        {
+            printf("DEBUG: Recieved data from telnet daemon\n");
+
+            n = read(tel_desc, &buf, BUFLEN);
+
+            if (n <= 0)
+            {
+                fprintf(stderr, "telnet daemon closed connection.\n");
+                exit(0);
+            }
+            printf("n=%d", n);
+
+            // Don't write the newline character
+            int num;
+
+            // change num to to a network value to send it
+            num = htonl(n - 2);
+
+            // write the size of the buffer
+            int result = write(client_desc, &num, sizeof(num));
+            if (result < 0)
+            {
+                fprintf(stderr, "ERROR: Failed to write to the clientProxy...\n");
+                exit(1);
+            }
+
+            // write the user text to the server
+            result = write(client_desc, buf, n - 2);
+
+            if (result < 0)
+            {
+                fprintf(stderr, "ERROR: Failed to write to the clientProxy...\n");
+                exit(1);
+            }
+
+            buf[n] = '\0';
+            printf("DEBUG: %s\n", buf);
+        }
+        else if (FD_ISSET(client_desc, &listen))
+        {
+            int telnetTextSize = 0;
+            n = read(client_desc, &telnetTextSize, BUFLEN);
+
+            if (n <= 0)
+            {
+                fprintf(stderr, "clientProxy closed connection at size read.\n");
+                exit(0);
+            }
+            printf("DEBUG: n=%d", n);
+
+            n = read(client_desc, &clientBuf, BUFLEN);
+
+            if (n <= 0)
+            {
+                fprintf(stderr, "clientProxy closed connection at buffer read.\n");
+                exit(0);
+            }
+            
+            printf("DEBUG: %s", clientBuf);
+
+            // write the size of the buffer
+            int result = write(tel_desc, &clientBuf, sizeof(num));
+            if (result < 0)
+            {
+                fprintf(stderr, "ERROR: Failed to write the clientProxy text to the serverProxy...\n");
+                exit(1);
+            }
+        }
+    }
+}
+
+int main(int argc, const char *argv[])
+{
+    int port = atoi(argv[1]);
+    acceptConnection(port);
+
+    return 0;
+}
