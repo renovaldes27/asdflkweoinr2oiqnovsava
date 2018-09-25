@@ -175,7 +175,7 @@ void queryLoop(int tel_desc, int server_desc)
                 fprintf(stderr, "Client closed connection.\n");
                 exit(0);
             }
-            //printf("n=%d", n);
+           //printf("n=%d", n);
 
             int num;
 
@@ -191,7 +191,7 @@ void queryLoop(int tel_desc, int server_desc)
             }
 
             // write the user text to the server
-            result = write(server_desc, buf, n - 2);
+            result = write(server_desc, buf, n);
 
             if (result < 0)
             {
@@ -222,7 +222,7 @@ void queryLoop(int tel_desc, int server_desc)
             //num = htonl(n);
 
             // write the user text to the server
-            result = write(tel_desc, buf, n);
+            int result = write(tel_desc, buf, n);
 
             if (result < 0)
             {
