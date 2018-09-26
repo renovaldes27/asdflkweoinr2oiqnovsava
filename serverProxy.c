@@ -161,6 +161,7 @@ void queryLoop(int tel_desc, int client_desc)
 
     while (1)
     {
+        printf("DEBUG on serverProxy selecting...\n", n);
         nfound = select(MAXFD + 1, &listen, (fd_set *)0, (fd_set *)0, &timeout);
         if (nfound == 0)
         {
