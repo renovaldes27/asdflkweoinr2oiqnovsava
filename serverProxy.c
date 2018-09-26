@@ -87,34 +87,29 @@ void acceptConnection(int port)
     char *telnetAddress = "127.0.0.1";
     int telnetPort = 23;
 
+    // Connect to Server
     tel_desc = socket(PF_INET, SOCK_STREAM, 6);
-    if (tel_desc <= 0)
-    {
-        fprintf(stderr, "ERROR: failed to create socket for the telnet daemon.\n");
-        exit(1);
-    }
-
     struct sockaddr_in telnet_sin;
 
     telnet_sin.sin_family = PF_INET;
     telnet_sin.sin_port = htons(telnetPort);
-    telnet_sin.sin_addr.s_addr = inet_addr(telnetAddress); // Accepting connection on localhost
-    result = bind(tel_desc, (struct sockaddr *)&telnet_sin, sizeof(telnet_sin));
-    if (result < 0)
+    in_addr_t address;
+    // Convert ip
+    address = inet_addr(telnetAddress);
+    if (address == -1)
     {
-        fprintf(stderr, "ERROR: failed to bind to the telnet port %d\n", telnetPort);
-        close(tel_desc);
+        fprintf(stderr, "ERROR: inet_addr failed to convert telnetAddress '%s'\n", telnetAddress);
+        exit(1);
+    }
+    memcpy(&telnet_sin.sin_addr, &address, sizeof(address));
+
+    if (connect(tel_desc, (struct sockaddr *)&telnet_sin, sizeof(telnet_sin)) < 0)
+    {
+        fprintf(stderr, "ERROR: can't connect to %s.%d - Connection refused\n", telnetAddress, telnetPort);
         exit(1);
     }
 
-    // TODO: not sure if the backlog (second parameter for listen) should be 3
-    if (listen(tel_desc, 3) < 0)
-    {
-        fprintf(stderr, "ERROR: failed to start listening on port %d\n", telnetPort);
-        exit(1);
-    }
-
-    // End of socket, bind, and listen of telnet daemon on server
+    // End of socket, and connect of telnet daemon on server
 
     // This function will run select than accept a connection
     queryLoop(tel_desc, client_desc);
