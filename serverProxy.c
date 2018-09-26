@@ -83,6 +83,17 @@ void acceptConnection(int port)
         exit(1);
     }
 
+    int cli_len = sizeof(client_desc);
+    static int new_socket;
+    if ((new_socket = accept(client_desc, (struct sockaddr *)&client_desc, (socklen_t *)&cli_len)) < 0)
+    {
+        fprintf(stderr, "ERROR: failed to accept connection\n");
+        close(client_desc);
+        exit(1);
+    }
+
+    printf("Accepted telnet connection\n");
+
     // End of socket, bind, and listen to client on server
 
     // Let's connect to the telnet daemon on localhost
@@ -115,11 +126,11 @@ void acceptConnection(int port)
     // End of socket, and connect of telnet daemon on server
 
     // This function will run select than accept a connection
-    queryLoop(tel_desc, client_desc);
+    queryLoop(tel_desc, new_socket);
 
     // TODO: close both socket now?
     close(tel_desc);
-    close(client_desc);
+    close(new_socket);
 }
 
 void queryLoop(int tel_desc, int client_desc)
