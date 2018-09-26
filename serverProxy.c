@@ -175,7 +175,7 @@ void queryLoop(int tel_desc, int client_desc)
             int num;
 
             // change num to to a network value to send it
-            num = htonl(n - 2);
+            num = htonl(n);
 
             // write the size of the buffer
             int result = write(client_desc, &num, sizeof(num));
@@ -186,7 +186,7 @@ void queryLoop(int tel_desc, int client_desc)
             }
 
             // write the user text to the server
-            result = write(client_desc, buf, n - 2);
+            result = write(client_desc, buf, n);
 
             if (result < 0)
             {
@@ -194,22 +194,24 @@ void queryLoop(int tel_desc, int client_desc)
                 exit(1);
             }
 
-            buf[n] = '\0';
+            //buf[n] = '\0'; // Commented out cause it should already be null terminated
             printf("DEBUG: %s\n", buf);
         }
         else if (FD_ISSET(client_desc, &listen))
         {
             int telnetTextSize = 0;
-            n = read(client_desc, &telnetTextSize, BUFLEN);
+            n = read(client_desc, &telnetTextSize, sizeof(telnetTextSize));
 
             if (n <= 0)
             {
                 fprintf(stderr, "clientProxy closed connection at size read.\n");
                 exit(0);
             }
+
+            telnetTextSize = ntohl(telnetTextSize);
             printf("DEBUG: n=%d", n);
 
-            n = read(client_desc, &clientBuf, BUFLEN);
+            n = read(client_desc, &clientBuf, telnetTextSize);
 
             if (n <= 0)
             {
@@ -219,8 +221,7 @@ void queryLoop(int tel_desc, int client_desc)
             
             printf("DEBUG: %s", clientBuf);
 
-            // write the size of the buffer
-            int result = write(tel_desc, &clientBuf, sizeof(num));
+            int result = write(tel_desc, &clientBuf, n);
             if (result < 0)
             {
                 fprintf(stderr, "ERROR: Failed to write the clientProxy text to the serverProxy...\n");

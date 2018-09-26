@@ -142,6 +142,7 @@ void queryLoop(int tel_desc, int server_desc)
     fd_set listen;
     struct timeval timeout; /* timeout for select call */
     int nfound;
+    int size;
     FD_ZERO(&listen);
     FD_SET(tel_desc, &listen);
     FD_SET(server_desc, &listen);
@@ -207,19 +208,23 @@ void queryLoop(int tel_desc, int server_desc)
         {
             printf("Recieved data from server\n");
 
-            n = read(server_desc, &buf, BUFLEN);
+            n = read(server_desc, &size, sizeof(size));
+
+            if (n <= 0)
+            {
+                fprintf(stderr, "clientProxy closed connection at size read.\n");
+                exit(0);
+            }
+
+            size = ntohl(size);
+
+            n = read(server_desc, &buf, size);
 
             if (n <= 0)
             {
                 fprintf(stderr, "Client closed connection.\n");
                 exit(0);
             }
-            //printf("n=%d", n);
-
-            //int num;
-
-            // change num to to a network value to send it
-            //num = htonl(n);
 
             // write the user text to the server
             int result = write(tel_desc, buf, n);
