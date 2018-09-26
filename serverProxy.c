@@ -32,8 +32,11 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <arpa/inet.h>
+#include <string.h>
 
 int readFromClient(int client_desc);
+void queryLoop(int tel_desc, int client_desc);
 
 /*
     acceptConnection
