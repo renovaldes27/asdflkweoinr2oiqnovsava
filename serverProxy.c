@@ -60,7 +60,7 @@ void acceptConnection(int port)
     client_desc = socket(PF_INET, SOCK_STREAM, 6);
     if (client_desc <= 0)
     {
-        fprintf(stderr, "ERROR: failed to create socket.\n");
+        fprintf(stderr, "serverProxy ERROR: failed to create socket.\n");
         exit(1);
     }
 
@@ -72,14 +72,14 @@ void acceptConnection(int port)
     int result = bind(client_desc, (struct sockaddr *)&sin, sizeof(sin));
     if (result < 0)
     {
-        fprintf(stderr, "ERROR: failed to bind to port %d\n", port);
+        fprintf(stderr, "serverProxy ERROR: failed to bind to port %d\n", port);
         close(client_desc);
         exit(1);
     }
 
     if (listen(client_desc, 3) < 0)
     {
-        fprintf(stderr, "ERROR: failed to start listening on port %d\n", port);
+        fprintf(stderr, "serverProxy ERROR: failed to start listening on port %d\n", port);
         exit(1);
     }
 
@@ -87,12 +87,12 @@ void acceptConnection(int port)
     static int new_socket;
     if ((new_socket = accept(client_desc, (struct sockaddr *)&client_desc, (socklen_t *)&cli_len)) < 0)
     {
-        fprintf(stderr, "ERROR: failed to accept connection\n");
+        fprintf(stderr, "serverProxy ERROR: failed to accept connection\n");
         close(client_desc);
         exit(1);
     }
 
-    printf("Accepted telnet connection\n");
+    printf("DEBUG serverProxy: Accepted telnet connection\n");
 
     // End of socket, bind, and listen to client on server
 
@@ -112,14 +112,14 @@ void acceptConnection(int port)
     address = inet_addr(telnetAddress);
     if (address == -1)
     {
-        fprintf(stderr, "ERROR: inet_addr failed to convert telnetAddress '%s'\n", telnetAddress);
+        fprintf(stderr, "serverProxy ERROR: inet_addr failed to convert telnetAddress '%s'\n", telnetAddress);
         exit(1);
     }
     memcpy(&telnet_sin.sin_addr, &address, sizeof(address));
 
     if (connect(tel_desc, (struct sockaddr *)&telnet_sin, sizeof(telnet_sin)) < 0)
     {
-        fprintf(stderr, "ERROR: can't connect to %s.%d - Connection refused\n", telnetAddress, telnetPort);
+        fprintf(stderr, "serverProxy ERROR: can't connect to %s.%d - Connection refused\n", telnetAddress, telnetPort);
         exit(1);
     }
 
@@ -174,7 +174,7 @@ void queryLoop(int tel_desc, int client_desc)
 
         if (FD_ISSET(tel_desc, &listen))
         {
-            printf("DEBUG: Recieved data from telnet daemon\n");
+            printf("FD_ISSET is telnet DEBUG on serverProxy: Recieved data from telnet daemon\n");
 
             n = read(tel_desc, &buf, BUFLEN);
 
@@ -183,9 +183,8 @@ void queryLoop(int tel_desc, int client_desc)
                 fprintf(stderr, "telnet daemon closed connection.\n");
                 exit(0);
             }
-            printf("n=%d", n);
+            printf("DEBUG FD_ISSET is telnet: n=%d\n", n);
 
-            // Don't write the newline character
             int num;
 
             // change num to to a network value to send it
@@ -195,7 +194,7 @@ void queryLoop(int tel_desc, int client_desc)
             int result = write(client_desc, &num, sizeof(num));
             if (result < 0)
             {
-                fprintf(stderr, "ERROR: Failed to write to the clientProxy...\n");
+                fprintf(stderr, "serverProxy ERROR: Failed to write to the clientProxy...\n");
                 exit(1);
             }
 
@@ -204,15 +203,17 @@ void queryLoop(int tel_desc, int client_desc)
 
             if (result < 0)
             {
-                fprintf(stderr, "ERROR: Failed to write to the clientProxy...\n");
+                fprintf(stderr, "serverProxy ERROR: Failed to write to the clientProxy...\n");
                 exit(1);
             }
 
             //buf[n] = '\0'; // Commented out cause it should already be null terminated
-            printf("DEBUG: %s\n", buf);
+            printf("DEBUG FD_ISSET is telnet: %s\n", buf);
         }
         else if (FD_ISSET(client_desc, &listen))
         {
+            printf("FD_ISSET is client DEBUG on serverProxy: Recieved data from telnet daemon\n");
+
             int telnetTextSize = 0;
             n = read(client_desc, &telnetTextSize, sizeof(telnetTextSize));
 
@@ -223,7 +224,7 @@ void queryLoop(int tel_desc, int client_desc)
             }
 
             telnetTextSize = ntohl(telnetTextSize);
-            printf("DEBUG: n=%d", n);
+            printf("FD_ISSET is client DEBUG: n=%d\n", n);
 
             n = read(client_desc, &clientBuf, telnetTextSize);
 
@@ -233,12 +234,12 @@ void queryLoop(int tel_desc, int client_desc)
                 exit(0);
             }
             
-            printf("DEBUG: %s", clientBuf);
+            printf("FD_ISSET is client DEBUG: %s\n", clientBuf);
 
             int result = write(tel_desc, &clientBuf, n);
             if (result < 0)
             {
-                fprintf(stderr, "ERROR: Failed to write the clientProxy text to the serverProxy...\n");
+                fprintf(stderr, "serverProxy ERROR: Failed to write the clientProxy text to the serverProxy...\n");
                 exit(1);
             }
         }
