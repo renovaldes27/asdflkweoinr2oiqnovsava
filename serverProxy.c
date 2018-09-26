@@ -161,7 +161,7 @@ void queryLoop(int tel_desc, int client_desc)
 
     while (1)
     {
-        printf("DEBUG on serverProxy selecting...\n", n);
+        printf("DEBUG on serverProxy selecting...\n");
         nfound = select(MAXFD + 1, &listen, (fd_set *)0, (fd_set *)0, &timeout);
         if (nfound == 0)
         {
@@ -213,7 +213,7 @@ void queryLoop(int tel_desc, int client_desc)
         }
         else if (FD_ISSET(client_desc, &listen))
         {
-            printf("FD_ISSET is client DEBUG on serverProxy: Recieved data from telnet daemon\n");
+            printf("FD_ISSET is client DEBUG on serverProxy: Recieved data from the client\n");
 
             int telnetTextSize = 0;
             n = read(client_desc, &telnetTextSize, sizeof(telnetTextSize));
