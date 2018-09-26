@@ -175,13 +175,12 @@ void queryLoop(int tel_desc, int server_desc)
                 fprintf(stderr, "Client closed connection.\n");
                 exit(0);
             }
-            printf("n=%d", n);
+           //printf("n=%d", n);
 
-            // Don't write the newline character
             int num;
 
             // change num to to a network value to send it
-            num = htonl(n - 2);
+            num = htonl(n);
 
             // write the size of the buffer
             int result = write(server_desc, &num, sizeof(num));
@@ -192,7 +191,7 @@ void queryLoop(int tel_desc, int server_desc)
             }
 
             // write the user text to the server
-            result = write(server_desc, buf, n - 2);
+            result = write(server_desc, buf, n);
 
             if (result < 0)
             {
@@ -200,47 +199,41 @@ void queryLoop(int tel_desc, int server_desc)
                 exit(1);
             }
 
-            buf[n] = '\0';
-            printf("%s\n", buf);
+            //buf[n] = '\0';
+            //printf("%s\n", buf);
+        }
+
+        if (FD_ISSET(server_desc, &listen))
+        {
+            printf("Recieved data from server\n");
+
+            n = read(server_desc, &buf, BUFLEN);
+
+            if (n <= 0)
+            {
+                fprintf(stderr, "Client closed connection.\n");
+                exit(0);
+            }
+            //printf("n=%d", n);
+
+            //int num;
+
+            // change num to to a network value to send it
+            //num = htonl(n);
+
+            // write the user text to the server
+            int result = write(tel_desc, buf, n);
+
+            if (result < 0)
+            {
+                fprintf(stderr, "ERROR: Failed to write to telnet\n");
+                exit(1);
+            }
+
+            //buf[n] = '\0';
+            //printf("%s\n", buf);
         }
     }
-
-    //while(1){
-    /*
-        size_t BUFLEN = 1024;
-        char* buf = NULL;
-        int n;
-        
-        if (n <=0){
-            return;
-        }
-
-        // 1025 to account for newline character, so max char sent is 1024
-        if (n > 1025){
-            n = 1025;
-        }
-
-        // Don't write the newline character
-        int num = n-1;
-
-        // change num to to a network value to send it
-        num = htonl(num);
-
-        // write the size of the buffer
-        int result = write(sock_desc, &num, sizeof(num));
-        if (result < 0){
-            fprintf(stderr, "ERROR: Failed to write to server\n");
-        }
-
-        // write the user text to the server
-        result = write(sock_desc, buf, n-1);
-
-        if (result < 0){
-            fprintf(stderr, "ERROR: Failed to write to server\n");
-        }
-        */
-    //}
-    //close(sock_desc);
 }
 
 int main(int argc, const char *argv[])
