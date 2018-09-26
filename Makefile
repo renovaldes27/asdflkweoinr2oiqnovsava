@@ -1,14 +1,14 @@
-# CSC425 Program 2 Makefile
+# CSC425 Program 2 Milestone 2 Makefile
 
-all: clean server client
+all: clean serverProxy clientProxy
 
-server: server.c
-	gcc -g server.c -o server
+server: serverProxy.c
+	gcc -g -Wall serverProxy.c -o serverProxy
 
-client: client.c
-	gcc -g client.c -o client
+client: clientProxy.c
+	gcc -g -Wall clientProxy.c -o clientProxy
 
 clean:
 	rm -f *.o
-	rm -f server
-	rm -f client
+	rm -f serverProxy
+	rm -f clientProxy
