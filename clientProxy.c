@@ -87,8 +87,6 @@ void connectToSockets(int telPort, int serverPort, const char *ipString)
         exit(1);
     }
 
-    //printf("Accepted telnet connection\n");
-
     // Connect to Server
     server_desc = socket(PF_INET, SOCK_STREAM, 6);
     struct sockaddr_in sin2;
@@ -154,7 +152,6 @@ void queryLoop(int tel_desc, int server_desc)
         FD_ZERO(&listen);
         FD_SET(tel_desc, &listen);
         FD_SET(server_desc, &listen);
-        //printf("DEBUG on clientProxy selecting...\n");
         nfound = select(MAXFD + 1, &listen, (fd_set *)0, (fd_set *)0, &timeout);
         if (nfound == 0)
         {
@@ -168,8 +165,6 @@ void queryLoop(int tel_desc, int server_desc)
 
         if (FD_ISSET(tel_desc, &listen))
         {
-            //printf("Recieved data from telnet\n");
-
             n = read(tel_desc, &buf, BUFLEN);
 
             if (n <= 0)
@@ -177,20 +172,6 @@ void queryLoop(int tel_desc, int server_desc)
                 fprintf(stderr, "Client closed connection.\n");
                 exit(0);
             }
-           //printf("n=%d", n);
-
-            //int num;
-
-            // change num to to a network value to send it
-            //num = htonl(n);
-
-            // write the size of the buffer
-            //int result = write(server_desc, &num, sizeof(num));
-            //if (result < 0)
-            //{
-            //    fprintf(stderr, "ERROR: Failed to write to server\n");
-            //    exit(1);
-            //}
 
             // write the user text to the server
             n = write(server_desc, buf, n);
@@ -200,40 +181,11 @@ void queryLoop(int tel_desc, int server_desc)
                 fprintf(stderr, "ERROR: Failed to write to server\n");
                 exit(1);
             }
-
-            //buf[n] = '\0';
-            //printf("%s\n", buf);
         }
 
         if (FD_ISSET(server_desc, &listen))
         {
-            //printf("Recieved data from server\n");
-
-            //n = read(server_desc, &size, sizeof(size));
-
-            //if (n <= 0)
-           // {
-            //    fprintf(stderr, "clientProxy closed connection at size read.\n");
-            //    exit(0);
-           // }
-
-            //size = ntohl(size);
-            //printf("DEBUG: size = %d\n", size);
             n = read(server_desc, &buf, BUFLEN);
-            //printf("DEBUG: AFTER READ %d\n",n);
-
-            //printf("DEBUG: AFTER READ %s\n", buf);
-
-            /*
-            int i;
-            for (i = 0; i < n; i++){
-                printf("'%c'", buf[i]);
-            }
-            printf("\n");
-            for (i = 0; i < n; i++){
-                printf("'%x'", buf[i]);
-            }
-            printf("\n");*/
 
             if (n <= 0)
             {
@@ -248,9 +200,6 @@ void queryLoop(int tel_desc, int server_desc)
                 fprintf(stderr, "ERROR: Failed to write to telnet\n");
                 exit(1);
             }
-
-            //buf[n] = '\0';
-            //printf("%s\n", buf);
         }
     }
 }
@@ -267,8 +216,6 @@ int main(int argc, const char *argv[])
     int port2 = atoi(argv[3]);
 
     connectToSockets(port1, port2, argv[2]);
-
-    //queryServer(sock_desc);
-    //close(sock_desc);
+    
     return 0;
 }
