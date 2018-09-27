@@ -92,7 +92,7 @@ void acceptConnection(int port)
         exit(1);
     }
 
-    printf("DEBUG serverProxy: Accepted telnet connection\n");
+    //printf("DEBUG serverProxy: Accepted telnet connection\n");
 
     // End of socket, bind, and listen to client on server
 
@@ -161,7 +161,7 @@ void queryLoop(int tel_desc, int client_desc)
         FD_ZERO(&listen);
         FD_SET(tel_desc, &listen);
         FD_SET(client_desc, &listen);
-        printf("DEBUG on serverProxy selecting...\n");
+        //printf("DEBUG on serverProxy selecting...\n");
         nfound = select(MAXFD + 1, &listen, (fd_set *)0, (fd_set *)0, &timeout);
         if (nfound == 0)
         {
@@ -175,7 +175,7 @@ void queryLoop(int tel_desc, int client_desc)
 
         if (FD_ISSET(tel_desc, &listen))
         {
-            printf("FD_ISSET is telnet DEBUG on serverProxy: Recieved data from telnet daemon\n");
+            //printf("FD_ISSET is telnet DEBUG on serverProxy: Recieved data from telnet daemon\n");
 
             n = read(tel_desc, &buf, BUFLEN);
 
@@ -184,9 +184,9 @@ void queryLoop(int tel_desc, int client_desc)
                 fprintf(stderr, "telnet daemon closed connection.\n");
                 exit(0);
             }
-            printf("DEBUG FD_ISSET is telnet: n=%d\n", n);
+            //printf("DEBUG FD_ISSET is telnet: n=%d\n", n);
             buf[n] = '\0';
-            printf("DEBUG FD_ISSET is telnet: %s\n", buf);
+            //printf("DEBUG FD_ISSET is telnet: %s\n", buf);
 
             int num;
 
@@ -211,11 +211,11 @@ void queryLoop(int tel_desc, int client_desc)
             }
 
             //buf[n] = '\0'; // Commented out cause it should already be null terminated
-            printf("DEBUG FD_ISSET is telnet: %s\n", buf);
+            //printf("DEBUG FD_ISSET is telnet: %s\n", buf);
         }
         else if (FD_ISSET(client_desc, &listen))
         {
-            printf("FD_ISSET is client DEBUG on serverProxy: Recieved data from the client\n");
+            //printf("FD_ISSET is client DEBUG on serverProxy: Recieved data from the client\n");
 
             int telnetTextSize = 0;
             n = read(client_desc, &telnetTextSize, sizeof(telnetTextSize));
@@ -227,7 +227,7 @@ void queryLoop(int tel_desc, int client_desc)
             }
 
             telnetTextSize = ntohl(telnetTextSize);
-            printf("FD_ISSET is client DEBUG: n=%d\n", n);
+            //printf("FD_ISSET is client DEBUG: n=%d\n", n);
 
             n = read(client_desc, &clientBuf, telnetTextSize);
 
@@ -237,7 +237,7 @@ void queryLoop(int tel_desc, int client_desc)
                 exit(0);
             }
             
-            printf("FD_ISSET is client DEBUG: %s\n", clientBuf);
+            //printf("FD_ISSET is client DEBUG: %s\n", clientBuf);
 
             int result = write(tel_desc, &clientBuf, n);
             if (result < 0)

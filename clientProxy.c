@@ -87,7 +87,7 @@ void connectToSockets(int telPort, int serverPort, const char *ipString)
         exit(1);
     }
 
-    printf("Accepted telnet connection\n");
+    //printf("Accepted telnet connection\n");
 
     // Connect to Server
     server_desc = socket(PF_INET, SOCK_STREAM, 6);
@@ -154,7 +154,7 @@ void queryLoop(int tel_desc, int server_desc)
         FD_ZERO(&listen);
         FD_SET(tel_desc, &listen);
         FD_SET(server_desc, &listen);
-        printf("DEBUG on clientProxy selecting...\n");
+        //printf("DEBUG on clientProxy selecting...\n");
         nfound = select(MAXFD + 1, &listen, (fd_set *)0, (fd_set *)0, &timeout);
         if (nfound == 0)
         {
@@ -168,7 +168,7 @@ void queryLoop(int tel_desc, int server_desc)
 
         if (FD_ISSET(tel_desc, &listen))
         {
-            printf("Recieved data from telnet\n");
+            //printf("Recieved data from telnet\n");
 
             n = read(tel_desc, &buf, BUFLEN);
 
@@ -207,7 +207,7 @@ void queryLoop(int tel_desc, int server_desc)
 
         if (FD_ISSET(server_desc, &listen))
         {
-            printf("Recieved data from server\n");
+            //printf("Recieved data from server\n");
 
             //n = read(server_desc, &size, sizeof(size));
 
@@ -220,9 +220,9 @@ void queryLoop(int tel_desc, int server_desc)
             //size = ntohl(size);
             //printf("DEBUG: size = %d\n", size);
             n = read(server_desc, &buf, BUFLEN);
-            printf("DEBUG: AFTER READ %d\n",n);
+            //printf("DEBUG: AFTER READ %d\n",n);
 
-            printf("DEBUG: AFTER READ %s\n", buf);
+            //printf("DEBUG: AFTER READ %s\n", buf);
 
             /*
             int i;
