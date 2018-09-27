@@ -185,7 +185,7 @@ void queryLoop(int tel_desc, int client_desc)
                 exit(0);
             }
             //printf("DEBUG FD_ISSET is telnet: n=%d\n", n);
-            buf[n] = '\0';
+            //buf[n] = '\0';
             //printf("DEBUG FD_ISSET is telnet: %s\n", buf);
 
             int num;
