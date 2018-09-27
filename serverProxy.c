@@ -185,26 +185,26 @@ void queryLoop(int tel_desc, int client_desc)
                 exit(0);
             }
             //printf("DEBUG FD_ISSET is telnet: n=%d\n", n);
-            buf[n] = '\0';
+            //buf[n] = '\0';
             //printf("DEBUG FD_ISSET is telnet: %s\n", buf);
 
-            int num;
+            //int num;
 
             // change num to to a network value to send it
-            num = htonl(n);
+            //num = htonl(n);
 
             // write the size of the buffer
-            int result = write(client_desc, &num, sizeof(num));
-            if (result < 0)
-            {
-                fprintf(stderr, "serverProxy ERROR: Failed to write to the clientProxy...\n");
-                exit(1);
-            }
+            //int result = write(client_desc, &num, sizeof(num));
+            //if (result < 0)
+            //{
+            //    fprintf(stderr, "serverProxy ERROR: Failed to write to the clientProxy...\n");
+            //    exit(1);
+            //}
 
             // write the user text to the server
-            result = write(client_desc, buf, n);
+            n = write(client_desc, buf, n);
 
-            if (result < 0)
+            if (n < 0)
             {
                 fprintf(stderr, "serverProxy ERROR: Failed to write to the clientProxy...\n");
                 exit(1);
@@ -213,27 +213,27 @@ void queryLoop(int tel_desc, int client_desc)
             //buf[n] = '\0'; // Commented out cause it should already be null terminated
             //printf("DEBUG FD_ISSET is telnet: %s\n", buf);
         }
-        else if (FD_ISSET(client_desc, &listen))
+        if (FD_ISSET(client_desc, &listen))
         {
             //printf("FD_ISSET is client DEBUG on serverProxy: Recieved data from the client\n");
 
-            int telnetTextSize = 0;
-            n = read(client_desc, &telnetTextSize, sizeof(telnetTextSize));
+            //int telnetTextSize = 0;
+            //n = read(client_desc, &telnetTextSize, sizeof(telnetTextSize));
 
-            if (n <= 0)
-            {
-                fprintf(stderr, "clientProxy closed connection at size read.\n");
-                exit(0);
-            }
+            //if (n <= 0)
+            //{
+            //    fprintf(stderr, "clientProxy closed connection at size read.\n");
+            //    exit(0);
+            //}
 
-            telnetTextSize = ntohl(telnetTextSize);
+            //telnetTextSize = ntohl(telnetTextSize);
             //printf("FD_ISSET is client DEBUG: n=%d\n", n);
 
-            n = read(client_desc, &clientBuf, telnetTextSize);
+            n = read(client_desc, &clientBuf, BUFLEN);
 
             if (n <= 0)
             {
-                fprintf(stderr, "clientProxy closed connection at buffer read.\n");
+                fprintf(stderr, "clientProxy closed connection.\n");
                 exit(0);
             }
             

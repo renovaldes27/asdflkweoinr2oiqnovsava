@@ -179,23 +179,23 @@ void queryLoop(int tel_desc, int server_desc)
             }
            //printf("n=%d", n);
 
-            int num;
+            //int num;
 
             // change num to to a network value to send it
-            num = htonl(n);
+            //num = htonl(n);
 
             // write the size of the buffer
-            int result = write(server_desc, &num, sizeof(num));
-            if (result < 0)
-            {
-                fprintf(stderr, "ERROR: Failed to write to server\n");
-                exit(1);
-            }
+            //int result = write(server_desc, &num, sizeof(num));
+            //if (result < 0)
+            //{
+            //    fprintf(stderr, "ERROR: Failed to write to server\n");
+            //    exit(1);
+            //}
 
             // write the user text to the server
-            result = write(server_desc, buf, n);
+            n = write(server_desc, buf, n);
 
-            if (result < 0)
+            if (n < 0)
             {
                 fprintf(stderr, "ERROR: Failed to write to server\n");
                 exit(1);
