@@ -149,18 +149,18 @@ void queryLoop(int tel_desc, int client_desc)
     fd_set listen;
     struct timeval timeout; /* timeout for select call */
     int nfound;
-    FD_ZERO(&listen);
-    FD_SET(tel_desc, &listen);
-    FD_SET(client_desc, &listen);
     timeout.tv_sec = 240;
     timeout.tv_usec = 0;
     int BUFLEN = 1024;
-    char buf[1024];
-    char clientBuf[1024];
+    char buf[BUFLEN];
+    char clientBuf[BUFLEN];
     int n;
 
     while (1)
     {
+        FD_ZERO(&listen);
+        FD_SET(tel_desc, &listen);
+        FD_SET(client_desc, &listen);
         printf("DEBUG on serverProxy selecting...\n");
         nfound = select(MAXFD + 1, &listen, (fd_set *)0, (fd_set *)0, &timeout);
         if (nfound == 0)
@@ -185,6 +185,8 @@ void queryLoop(int tel_desc, int client_desc)
                 exit(0);
             }
             printf("DEBUG FD_ISSET is telnet: n=%d\n", n);
+            buf[n] = '\0';
+            printf("DEBUG FD_ISSET is telnet: %s\n", buf);
 
             int num;
 

@@ -143,17 +143,17 @@ void queryLoop(int tel_desc, int server_desc)
     struct timeval timeout; /* timeout for select call */
     int nfound;
     int size;
-    FD_ZERO(&listen);
-    FD_SET(tel_desc, &listen);
-    FD_SET(server_desc, &listen);
     timeout.tv_sec = 240;
     timeout.tv_usec = 0;
     int BUFLEN = 1024;
-    char buf[1024];
+    char buf[BUFLEN];
     int n;
 
     while (1)
     {
+        FD_ZERO(&listen);
+        FD_SET(tel_desc, &listen);
+        FD_SET(server_desc, &listen);
         printf("DEBUG on clientProxy selecting...\n");
         nfound = select(MAXFD + 1, &listen, (fd_set *)0, (fd_set *)0, &timeout);
         if (nfound == 0)
@@ -209,17 +209,31 @@ void queryLoop(int tel_desc, int server_desc)
         {
             printf("Recieved data from server\n");
 
-            n = read(server_desc, &size, sizeof(size));
+            //n = read(server_desc, &size, sizeof(size));
 
-            if (n <= 0)
-            {
-                fprintf(stderr, "clientProxy closed connection at size read.\n");
-                exit(0);
+            //if (n <= 0)
+           // {
+            //    fprintf(stderr, "clientProxy closed connection at size read.\n");
+            //    exit(0);
+           // }
+
+            //size = ntohl(size);
+            //printf("DEBUG: size = %d\n", size);
+            n = read(server_desc, &buf, BUFLEN);
+            printf("DEBUG: AFTER READ %d\n",n);
+
+            printf("DEBUG: AFTER READ %s\n", buf);
+
+            /*
+            int i;
+            for (i = 0; i < n; i++){
+                printf("'%c'", buf[i]);
             }
-
-            size = ntohl(size);
-
-            n = read(server_desc, &buf, size);
+            printf("\n");
+            for (i = 0; i < n; i++){
+                printf("'%x'", buf[i]);
+            }
+            printf("\n");*/
 
             if (n <= 0)
             {
@@ -227,7 +241,6 @@ void queryLoop(int tel_desc, int server_desc)
                 exit(0);
             }
 
-            // write the user text to the server
             int result = write(tel_desc, buf, n);
 
             if (result < 0)
