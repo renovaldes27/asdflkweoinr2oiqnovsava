@@ -91,6 +91,7 @@ void acceptConnection(int port)
         close(client_desc);
         exit(1);
     }
+    close(client_desc);
 
     // End of socket, bind, and listen to client on server
 
@@ -111,6 +112,7 @@ void acceptConnection(int port)
     if (address == -1)
     {
         fprintf(stderr, "serverProxy ERROR: inet_addr failed to convert telnetAddress '%s'\n", telnetAddress);
+        close(client_desc);
         exit(1);
     }
     memcpy(&telnet_sin.sin_addr, &address, sizeof(address));
@@ -118,6 +120,7 @@ void acceptConnection(int port)
     if (connect(tel_desc, (struct sockaddr *)&telnet_sin, sizeof(telnet_sin)) < 0)
     {
         fprintf(stderr, "serverProxy ERROR: can't connect to %s.%d - Connection refused\n", telnetAddress, telnetPort);
+        close(client_desc);
         exit(1);
     }
 
@@ -163,6 +166,8 @@ void queryLoop(int tel_desc, int client_desc)
         if (nfound == 0)
         {
             fprintf(stderr, "ERROR: select call timed out\n");
+            close(tel_desc);
+            close(client_desc);
             exit(1);
         }
         else if (nfound < 0)
@@ -177,6 +182,8 @@ void queryLoop(int tel_desc, int client_desc)
             if (n <= 0)
             {
                 fprintf(stderr, "telnet daemon closed connection.\n");
+                close(tel_desc);
+                close(client_desc);
                 exit(0);
             }
 
@@ -186,6 +193,8 @@ void queryLoop(int tel_desc, int client_desc)
             if (n < 0)
             {
                 fprintf(stderr, "serverProxy ERROR: Failed to write to the clientProxy...\n");
+                close(tel_desc);
+                close(client_desc);
                 exit(1);
             }
         }
@@ -196,6 +205,8 @@ void queryLoop(int tel_desc, int client_desc)
             if (n <= 0)
             {
                 fprintf(stderr, "clientProxy closed connection.\n");
+                close(tel_desc);
+                close(client_desc);
                 exit(0);
             }
             
@@ -203,6 +214,8 @@ void queryLoop(int tel_desc, int client_desc)
             if (result < 0)
             {
                 fprintf(stderr, "serverProxy ERROR: Failed to write the clientProxy text to the serverProxy...\n");
+                close(tel_desc);
+                close(client_desc);
                 exit(1);
             }
         }

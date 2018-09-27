@@ -62,7 +62,6 @@ void connectToSockets(int telPort, int serverPort, const char *ipString)
 
     sin.sin_family = PF_INET;
     sin.sin_port = htons(telPort);
-    // TODO: It really should be just localhost since telnet is run local. So not any address
     sin.sin_addr.s_addr = INADDR_ANY; // Accepting connections from any sources
     int result = bind(tel_desc, (struct sockaddr *)&sin, sizeof(sin));
     if (result < 0)
@@ -99,6 +98,7 @@ void connectToSockets(int telPort, int serverPort, const char *ipString)
     if (address == -1)
     {
         fprintf(stderr, "ERROR: inet_addr failed to convert ipString '%s'\n", ipString);
+        close(tel_desc);
         exit(1);
     }
     memcpy(&sin2.sin_addr, &address, sizeof(address));
@@ -106,6 +106,7 @@ void connectToSockets(int telPort, int serverPort, const char *ipString)
     if (connect(server_desc, (struct sockaddr *)&sin2, sizeof(sin2)) < 0)
     {
         fprintf(stderr, "ERROR: can't connect to %s.%d - Connection refused\n", ipString, serverPort);
+        close(tel_desc);
         exit(1);
     }
 
@@ -156,6 +157,8 @@ void queryLoop(int tel_desc, int server_desc)
         if (nfound == 0)
         {
             fprintf(stderr, "ERROR: select call timed out\n");
+            close(server_desc);
+            close(tel_desc);
             exit(1);
         }
         else if (nfound < 0)
@@ -170,6 +173,8 @@ void queryLoop(int tel_desc, int server_desc)
             if (n <= 0)
             {
                 fprintf(stderr, "Client closed connection.\n");
+                close(server_desc);
+                close(tel_desc);
                 exit(0);
             }
 
@@ -179,6 +184,8 @@ void queryLoop(int tel_desc, int server_desc)
             if (n < 0)
             {
                 fprintf(stderr, "ERROR: Failed to write to server\n");
+                close(server_desc);
+                close(tel_desc);
                 exit(1);
             }
         }
@@ -189,7 +196,9 @@ void queryLoop(int tel_desc, int server_desc)
 
             if (n <= 0)
             {
-                fprintf(stderr, "Client closed connection.\n");
+                fprintf(stderr, "Server closed connection.\n");
+                close(server_desc);
+                close(tel_desc);
                 exit(0);
             }
 
@@ -198,6 +207,8 @@ void queryLoop(int tel_desc, int server_desc)
             if (result < 0)
             {
                 fprintf(stderr, "ERROR: Failed to write to telnet\n");
+                close(server_desc);
+                close(tel_desc);
                 exit(1);
             }
         }
