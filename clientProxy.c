@@ -1,22 +1,24 @@
 /*
     Authors: Reno Valdes, Hazza Alkaabi
-    Date: September 14, 2018
+    Date: September 28, 2018
     Instructor: Patrick Homer
     Computer Science 425: Principles of Networking
     University of Arizona
 
-    Project: Program 2: Mobile TCP Proxy - Milestone 1
-    File name: client.c
-    Description: This program (the client) will write the server user input from stdin.
-                 The server in turn will print the client message to its stdout. The client
-                 is limited to 1024 charcaters. The message will be sent without the null
-                 terminator and the newline characters.
+    Project: Program 2: Mobile TCP Proxy - Milestone 2
+    File name: clientProxy.c
+    Description: This program (the clientProxy) will open two socket connections,
+                 one to the telnet application on the same machine as the client
+                 and one to a remote serverProxy. After opening both connections
+                 the clientProxy will simply relay data read from one socket to the other.
+
     
     The command line argument for the client is as follow:
-    ./client server_ip_address port_number
+    ./clientProxy telnet_port_number server_ip_address server_port_number
     where:
+    telnet_port_number is the port that telnet should connect to when connecting to the clientProxy
     server_ip_address is the ip address of the server.  
-    port_number is the port number that the server will be listneing to.
+    server_port_number is the port number that the server will be listneing to.
 
     Note: A Makefile is provided. 
     Run "make" or "make all" in the command line in the directory where Makefile are located.
@@ -38,14 +40,17 @@
 void queryLoop(int tel_desc, int server_desc);
 
 /*
-    connectToSock
+    connectToSockets
 
-    params: int port : the port to connect to
-            string hostName : the host to connect to
-    return: int sock_desc
+    params: int telPort : the port to listen on for the telnet connection
+            int serverPort : the server port to connect to 
+            string ipString : the IP address of the serverProxy machine to connect to
+    return: None
     
-    This function takes a port number and an ip address
-    and connects to a socket at that location.
+    This function opens the two socket connections necesarry for relaying data.
+    First it will make a passive connect call to wait for the incoming telnet connecttion.
+    Then it will make an active connect call to connect to the serverProxy.
+    Once connected, the program goes into an infinite query loop.
 */
 void connectToSockets(int telPort, int serverPort, const char *ipString)
 {
@@ -114,16 +119,17 @@ void connectToSockets(int telPort, int serverPort, const char *ipString)
 }
 
 /*
-    queryServer
+    queryLoop
 
-    params: int sock_desc : the socket to connect to
+    params: int tel_desc : the telnet socket
+            int server_desc : the serverProxy socket
 
-    return: int sock_desc
+    return: None
     
-    This function waits for user input from stdin
-    to send it to the server. It is maxed at 1024,
-    that is without null terminator and newline
-    characters.
+    This function uses select() calls to check if the telnet socket
+    or serverProxy socket have data. Whenever one of the sockets
+    has data to read, this data is read into a buffer and written
+    to the othe socket. It simply relays messages between the two sockets.
 */
 void queryLoop(int tel_desc, int server_desc)
 {
@@ -141,7 +147,6 @@ void queryLoop(int tel_desc, int server_desc)
     fd_set listen;
     struct timeval timeout; /* timeout for select call */
     int nfound;
-    int size;
     timeout.tv_sec = 240;
     timeout.tv_usec = 0;
     int BUFLEN = 1024;
@@ -156,26 +161,38 @@ void queryLoop(int tel_desc, int server_desc)
         nfound = select(MAXFD + 1, &listen, (fd_set *)0, (fd_set *)0, &timeout);
         if (nfound == 0)
         {
-            fprintf(stderr, "ERROR: select call timed out\n");
+            fprintf(stderr, "ERROR: select call timed out.\n");
             close(server_desc);
             close(tel_desc);
             exit(1);
         }
         else if (nfound < 0)
         {
-            /* handle error here... */
+            fprintf(stderr, "ERROR: failed on select call\n.");
+            close(server_desc);
+            close(tel_desc);
+            exit(1);
         }
 
+        // Recieved data from telnet application
         if (FD_ISSET(tel_desc, &listen))
         {
             n = read(tel_desc, &buf, BUFLEN);
 
-            if (n <= 0)
+            if (n == 0)
             {
-                fprintf(stderr, "Client closed connection.\n");
+                fprintf(stdout, "Telnet closed connection.\n");
                 close(server_desc);
                 close(tel_desc);
                 exit(0);
+            }
+            
+            else if (n < 0)
+            {
+                fprintf(stderr, "Failed to read from telnet socket.\n");
+                close(server_desc);
+                close(tel_desc);
+                exit(1);
             }
 
             // write the user text to the server
@@ -190,16 +207,25 @@ void queryLoop(int tel_desc, int server_desc)
             }
         }
 
+        // Recieved data from serverProxy
         if (FD_ISSET(server_desc, &listen))
         {
             n = read(server_desc, &buf, BUFLEN);
 
-            if (n <= 0)
+            if (n == 0)
             {
-                fprintf(stderr, "Server closed connection.\n");
+                fprintf(stdout, "Server Proxy closed connection.\n");
                 close(server_desc);
                 close(tel_desc);
                 exit(0);
+            }
+
+            else if (n < 0)
+            {
+                fprintf(stderr, "Failed to read from serverProxy socket.\n");
+                close(server_desc);
+                close(tel_desc);
+                exit(1);
             }
 
             int result = write(tel_desc, buf, n);
