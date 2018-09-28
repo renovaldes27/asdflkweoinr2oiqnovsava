@@ -137,8 +137,9 @@ void connectToSockets(int port)
 
     return: None
     
-    This function selects between the telnet socket and clientProxy socket. It will read from clientProxy to then
-    write the telnet daemon. It will read from telnet daemon to write the clientProxy.
+    This function selects between the telnet socket and clientProxy socket. It will read
+    from clientProxy to then write the telnet daemon. It will read from telnet daemon to
+    write the clientProxy.
 */
 void relayLoop(int tel_desc, int client_desc)
 {
@@ -178,7 +179,7 @@ void relayLoop(int tel_desc, int client_desc)
         }
         else if (nfound < 0)
         {
-            perror("select failed");
+            fprintf(stderr, "ERROR: failed on select call\n.");
             close(tel_desc);
             close(client_desc);
             exit(1);
