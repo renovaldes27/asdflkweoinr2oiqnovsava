@@ -178,7 +178,7 @@ void relayLoop(int tel_desc, int client_desc)
         }
         else if (nfound < 0)
         {
-            fprintf(stderr, "ERROR: select call timed out\n");
+            perror("select failed");
             close(tel_desc);
             close(client_desc);
             exit(1);

@@ -163,7 +163,10 @@ void queryLoop(int tel_desc, int server_desc)
         }
         else if (nfound < 0)
         {
-            /* handle error here... */
+            perror("select failed");
+            close(server_desc);
+            close(tel_desc);
+            exit(1);
         }
 
         if (FD_ISSET(tel_desc, &listen))
