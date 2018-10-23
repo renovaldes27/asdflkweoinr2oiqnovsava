@@ -38,6 +38,9 @@
 #include <sys/time.h>
 
 void queryLoop(int tel_desc, int server_desc);
+int readHeartBeat(int client_desc);
+void sendHeartBeat(int client_ID, int server_desc);
+
 
 /*
     connectToSockets
@@ -135,45 +138,56 @@ void queryLoop(int tel_desc, int server_desc)
 {
     int MAXFD = 0;
 
-    if (tel_desc > server_desc)
-    {
+    if (tel_desc > server_desc) {
         MAXFD = tel_desc;
     }
-    else
-    {
+    else {
         MAXFD = server_desc;
     }
 
     fd_set listen;
     struct timeval timeout; /* timeout for select call */
     int nfound;
-    timeout.tv_sec = 240;
+    timeout.tv_sec = 1;
     timeout.tv_usec = 0;
     int BUFLEN = 1024;
     char buf[BUFLEN];
     int n;
+    int missingHeartBeat = 0;
+    int clientID = rand();
+    int newID;
+    char type;
 
-    while (1)
-    {
+    while (1) {
+        if (missingHeartBeat == 3){
+            // Need to reconnect
+            printf("Need to open a new connection!\n");
+            exit(1);
+        }
+        sendHeartBeat(clientID, server_desc);
+        printf("ID = %d\n", clientID);
+
         FD_ZERO(&listen);
         FD_SET(tel_desc, &listen);
         FD_SET(server_desc, &listen);
         nfound = select(MAXFD + 1, &listen, (fd_set *)0, (fd_set *)0, &timeout);
-        if (nfound == 0)
-        {
+        if (nfound == 0) {
+            missingHeartBeat++;
+            continue;
+            /*
             fprintf(stderr, "ERROR: select call timed out.\n");
             close(server_desc);
             close(tel_desc);
             exit(1);
+            */
         }
-        else if (nfound < 0)
-        {
+        else if (nfound < 0) {
             fprintf(stderr, "ERROR: failed on select call\n.");
             close(server_desc);
             close(tel_desc);
             exit(1);
         }
-
+        /*
         // Recieved data from telnet application
         if (FD_ISSET(tel_desc, &listen))
         {
@@ -206,10 +220,33 @@ void queryLoop(int tel_desc, int server_desc)
                 exit(1);
             }
         }
-
+        */
         // Recieved data from serverProxy
         if (FD_ISSET(server_desc, &listen))
         {
+
+            n = read(server_desc, &type, 1);
+            printf("type = %c\n", type);
+
+            if (n <= 0) {
+                fprintf(stderr, "clientProxy closed connection.\n");
+                close(tel_desc);
+                close(server_desc);
+                exit(0);
+            }
+            
+            if (type == 'h'){
+                missingHeartBeat = 0;
+                if((newID = readHeartBeat(server_desc)) != clientID){
+                    if(clientID == -1){
+                        clientID = newID;
+                    }
+
+                    //Else it is a new connection
+                }
+            }
+
+            /*
             n = read(server_desc, &buf, BUFLEN);
 
             if (n == 0)
@@ -237,14 +274,82 @@ void queryLoop(int tel_desc, int server_desc)
                 close(tel_desc);
                 exit(1);
             }
+            */
         }
+        
     }
+    
 }
 
-int main(int argc, const char *argv[])
-{
-    if (argc > 4)
+void sendHeartBeat(int clientID, int server_desc){ 
+    int n;
+    char type = 'h';
+    // write the message type
+    n = write(server_desc, &type, 1);
+    if (n < 0) {
+        fprintf(stderr, "ERROR: Failed to write to server\n");
+        close(server_desc); // TODO change to close all sockets
+        exit(1);
+    }
+
+    int size = htonl(sizeof(clientID));
+
+    // write the size
+    n = write(server_desc, &size, sizeof(size));
+    if (n < 0) {
+        fprintf(stderr, "ERROR: Failed to write to server\n");
+        close(server_desc); // TODO change to close all sockets
+        exit(1);
+    }
+
+    clientID = htonl(clientID);
+    n = write(server_desc, &clientID, sizeof(clientID));
+    if (n < 0) {
+        fprintf(stderr, "ERROR: Failed to write to server\n");
+        close(server_desc); // TODO change to close all sockets
+        exit(1);
+    }
+
+    printf("sent heart beat\n");
+}
+
+int readHeartBeat(int server_desc){
+
+    int n;
+    int size;
+    int newID;
+
+    n = read(server_desc, &size, sizeof(size));
+
+    printf("n = %d\n", n);
+    if (n <= 0)
     {
+        fprintf(stderr, "clientProxy closed connection.\n");
+        close(server_desc);
+        exit(0);
+    }
+    size = ntohl(size);
+    printf("size = %d\n", size);
+
+    n = read(server_desc, &newID, size);
+
+    if (n <= 0)
+    {
+        fprintf(stderr, "clientProxy closed connection.\n");
+        close(server_desc);
+        exit(0);
+    }
+
+    newID = ntohl(newID);
+    printf("ID = %d\n", newID);
+
+    printf("recieved heart beat\n");
+
+    return newID;
+}
+
+int main(int argc, const char *argv[]) {
+    if (argc > 4) {
         fprintf(stderr, "ERROR: Too many cmd-line arguments\n");
         exit(1);
     }

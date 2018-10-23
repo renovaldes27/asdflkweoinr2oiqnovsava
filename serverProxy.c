@@ -37,6 +37,8 @@
 
 void connectToSockets(int port);
 void relayLoop(int tel_desc, int client_desc);
+int readHeartBeat(int client_desc);
+void sendHeartBeat(int clientID, int client_desc);
 
 /*
     connectToSockets
@@ -157,25 +159,40 @@ void relayLoop(int tel_desc, int client_desc)
     fd_set listen;
     struct timeval timeout; /* timeout for select call */
     int nfound;
-    timeout.tv_sec = 240;
+    timeout.tv_sec = 1;
     timeout.tv_usec = 0;
     int BUFLEN = 1024;
     char buf[BUFLEN];
     char clientBuf[BUFLEN];
     int n;
+    int missingHeartBeat = 0;
+    int size;
+    char type;
+    int clientID = -1;
+    int newID;
 
-    while (1)
-    {
+
+    while (1) {
+        if (missingHeartBeat == 3){
+            // Need to reconnect
+            printf("Need to open a new connection!\n");
+            exit(1);
+        }
+
+        if(clientID != -1){
+            sendHeartBeat(clientID, client_desc);
+        }
+
         FD_ZERO(&listen);
         FD_SET(tel_desc, &listen);
         FD_SET(client_desc, &listen);
         nfound = select(MAXFD + 1, &listen, (fd_set *)0, (fd_set *)0, &timeout);
+        printf("nfound = %d\n", nfound);
         if (nfound == 0)
         {
-            fprintf(stderr, "ERROR: select call timed out\n");
-            close(tel_desc);
-            close(client_desc);
-            exit(1);
+            printf("timed out\n");
+            missingHeartBeat++;
+            continue;
         }
         else if (nfound < 0)
         {
@@ -185,8 +202,11 @@ void relayLoop(int tel_desc, int client_desc)
             exit(1);
         }
 
+        
         if (FD_ISSET(tel_desc, &listen))
         {
+            printf("tel_desc set\n");
+            /*
             n = read(tel_desc, &buf, BUFLEN);
 
             if (n <= 0)
@@ -207,9 +227,33 @@ void relayLoop(int tel_desc, int client_desc)
                 close(client_desc);
                 exit(1);
             }
+            */
         }
+
         if (FD_ISSET(client_desc, &listen))
         {
+            n = read(client_desc, &type, 1);
+            printf("type = %c\n", type);
+
+            if (n <= 0) {
+                fprintf(stderr, "clientProxy closed connection.\n");
+                close(tel_desc);
+                close(client_desc);
+                exit(0);
+            }
+            
+            if (type == 'h'){
+                missingHeartBeat = 0;
+                if((newID = readHeartBeat(client_desc)) != clientID){
+                    if(clientID == -1){
+                        clientID = newID;
+                    }
+
+                    //Else it is a new connection
+                }
+            }
+
+            /*
             n = read(client_desc, &clientBuf, BUFLEN);
 
             if (n <= 0)
@@ -228,8 +272,76 @@ void relayLoop(int tel_desc, int client_desc)
                 close(client_desc);
                 exit(1);
             }
+            */
         }
     }
+}
+
+void sendHeartBeat(int clientID, int client_desc){ 
+    int n;
+    char type = 'h';
+    // write the message type
+    n = write(client_desc, &type, 1);
+    if (n < 0) {
+        fprintf(stderr, "ERROR: Failed to write to server\n");
+        close(client_desc); // TODO change to close all sockets
+        exit(1);
+    }
+
+    int size = htonl(sizeof(clientID));
+
+    // write the size
+    n = write(client_desc, &size, sizeof(size));
+    if (n < 0) {
+        fprintf(stderr, "ERROR: Failed to write to server\n");
+        close(client_desc); // TODO change to close all sockets
+        exit(1);
+    }
+
+    clientID = htonl(clientID);
+    n = write(client_desc, &clientID, sizeof(clientID));
+    if (n < 0) {
+        fprintf(stderr, "ERROR: Failed to write to server\n");
+        close(client_desc); // TODO change to close all sockets
+        exit(1);
+    }
+
+    printf("sent heart beat\n");
+}
+
+int readHeartBeat(int client_desc){
+
+    int n;
+    int size;
+    int newID;
+
+    n = read(client_desc, &size, sizeof(size));
+
+    printf("n = %d\n", n);
+    if (n <= 0)
+    {
+        fprintf(stderr, "clientProxy closed connection.\n");
+        close(client_desc);
+        exit(0);
+    }
+    size = ntohl(size);
+    printf("size = %d\n", size);
+
+    n = read(client_desc, &newID, size);
+
+    if (n <= 0)
+    {
+        fprintf(stderr, "clientProxy closed connection.\n");
+        close(client_desc);
+        exit(0);
+    }
+
+    newID = ntohl(newID);
+    printf("ID = %d\n", newID);
+
+    printf("recieved heart beat\n");
+
+    return newID;
 }
 
 int main(int argc, const char *argv[])
