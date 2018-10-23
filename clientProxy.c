@@ -161,8 +161,10 @@ void queryLoop(int tel_desc, int server_desc)
     while (1) {
         if (missingHeartBeat == 3){
             // Need to reconnect
+            // TODO: We need to close disconnected socket(s) here
+            // TODO: Add a one-second timeout to the call to select in each proxy
             printf("Need to open a new connection!\n");
-            exit(1);
+            exit(1);  // TODO: We do not exit. This code is temporarily. 
         }
         sendHeartBeat(clientID, server_desc);
         printf("ID = %d\n", clientID);
